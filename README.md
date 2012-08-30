@@ -25,7 +25,10 @@ The initial planned version is _n_:
 Configuration example:
 
     { "repository": "/etc/puppet"
-	 	"styles": ["standalone", "puppetmaster"],
+      "styles": ["standalone", "puppetmaster"],
+      "default-environment": "production",
+      "post-update-hook": "reload",
+      "environments": "automatic",
       "modules": {
         "_default": { "post-update-hook": "reload" },
         "puppetlabs/stdlib": "forge",
@@ -33,9 +36,9 @@ Configuration example:
         "apache": {
           "style": "forge",
           "name": "puppetlabs/apache",
-          "version": "0.0.3"
+          "version": { "staging": "latest", "production": "0.0.3" }
         }
-		  "our/webserver": "git+ssh://my.gitserver.com/webserver.git"
+        "our/webserver": "git+ssh://my.gitserver.com/webserver.git"
       }
       "hook": {
         "reload": ["sudo /etc/init.d/puppetmaster reload"]
@@ -77,3 +80,5 @@ For a similar bootstrapping reason I won't be implementing this as a face. A
 face could be delivered as a module but delivering modules is what this is all
 for.
 
+The directory `marshall` in the module_path is reserved by `puppet-marshall`
+and not configured in the puppetmaster configuration it emits.

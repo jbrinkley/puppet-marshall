@@ -1,0 +1,170 @@
+#!/usr/bin/env rspec
+# -*- mode: ruby -*-
+
+require 'puppet/marshall/git'
+
+$master_content = <<'EOF'
+class testmod {
+   file {
+      "testmod-indicator":
+         path => "/var/tmp/testmod.indicator",
+         content => "testmod\n",
+         owner => 'root',
+         group => 'root',
+         mode => 0644;
+   }
+}
+EOF
+
+$staging_content = <<'EOF'
+class testmod {
+   file {
+      "testmod-indicator":
+         path => "/var/tmp/testmod.indicator",
+         content => "testmod staging\n",
+         owner => 'root',
+         group => 'root',
+         mode => 0644;
+   }
+}
+EOF
+
+$staging_update = <<'EOF'
+class testmod {
+   file {
+      "testmod-indicator":
+         path => "/var/tmp/testmod.indicator",
+         content => "testmod staging update\n",
+         owner => 'root',
+         group => 'root',
+         mode => 0644;
+   }
+}
+EOF
+
+$user_content = <<'EOF'
+class testmod {
+   file {
+      "testmod-indicator":
+         path => "/var/tmp/testmod.indicator",
+         content => "testmod user\n",
+         owner => 'root',
+         group => 'root',
+         mode => 0644;
+   }
+}
+EOF
+
+def filecontent(file)
+    File.open(file, 'r') { |fh| fh.read }
+end
+
+RSpec.configure do |config|
+
+    config.before(:all) do
+        FileUtils.rm_r "test/data" if File.exist? "test/data"
+        if File.exist? "test/fixture"
+            FileUtils.cp_r "test/fixture"
+        else
+            FileUtils.mkdir "test/data"
+        end
+        Dir.chdir "test/data"
+        system "git init testmod"
+        Dir.chdir "testmod" do
+            system "git config --local user.name \"Tester\""
+            system "git config --local user.email \"test@test.test\""
+            FileUtils.mkdir "manifests"
+            File.open("manifests/testmod.pp", 'w') do |fh|
+                fh.print $master_content
+            end
+            system "git add manifests"
+            system "git commit -m\"initial commit\""
+            system "git branch staging"
+            system "git checkout staging"
+            File.open("manifests/testmod.pp", 'w') do |fh|
+                fh.print $staging_content
+            end
+            system "git add manifests/testmod.pp"
+            system "git commit -m\"add staging version\""
+            system "git checkout master"
+        end
+
+    end
+
+    config.after(:all) do
+        FileUtils.rm_r "test/data" if File.exist? "test/data"
+    end
+
+end
+
+describe Puppet::Marshall::Git do
+
+    context "when initializing" do
+
+        after(:all) do
+            FileUtils.rm_r "wrk/testmod"
+        end
+
+        it "opens an existing git repo when first created" do
+            git = Puppet::Marshall::Git.new "testmod"
+            git.repo.should eq "testmod"
+        end
+
+        it "clones an existing repo when using clone" do
+            git = Puppet::Marshall::Git.clone("testmod", "wrk/testmod")
+            git.repo.should eq "wrk/testmod"
+            file = File.join(git.repo, "manifests", "testmod.pp")
+            filecontent(file).should eq $master_content
+        end
+
+    end
+
+    context "when updating" do
+
+        before(:all) do
+            @marsh = Puppet::Marshall::Git.clone("testmod",
+                                                "marshall/testmod")
+            @file = File.join(@marsh.repo, "manifests", "testmod.pp")
+        end
+
+        it "returns the marshalled repo location" do
+            @marsh.repo.should eq "marshall/testmod"
+            filecontent(@file).should eq $master_content
+        end
+
+
+        it "returns the remote name" do
+            @marsh.remote_name.should eq 'origin'
+        end
+
+        it "returns remote branches on an existing marshalled repo" do
+            remote = @marsh.remote_name
+            @marsh.remote_branches.should =~ [
+                "#{remote}/HEAD -> #{remote}/master",
+                "#{remote}/master",
+                "#{remote}/staging"]
+        end
+
+        it "returns local branches on an existing marshalled repo" do
+            @marsh.pull
+            @marsh.track('staging')
+            @marsh.local_branches.should =~ ['master', 'staging']
+        end
+
+        it "creates local tracking branches for remote branches" do
+            Dir.chdir("testmod") do
+                system "git branch user >/dev/null 2>&1"
+                system "git checkout user >/dev/null 2>&1"
+                File.open("manifests/testmod.pp", 'w') do |fh|
+                    fh.print $user_content
+                end
+                system "git add manifests/testmod.pp >/dev/null 2>&1"
+                system "git commit -m\"update user content\" >/dev/null 2>&1"
+            end
+            @marsh.track_missing
+            @marsh.local_branches.should =~ ['master', 'staging', 'user']
+        end
+
+    end
+
+end
