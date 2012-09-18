@@ -17,7 +17,6 @@ module Puppet::Marshall
                     @style = 'git'
                 end
             end
-
         end
 
         def fullname=(fname)
