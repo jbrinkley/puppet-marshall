@@ -72,25 +72,26 @@ RSpec.configure do |config|
         else
             FileUtils.mkdir "test/data"
         end
-        Dir.chdir "test/data"
-        system "git init testmod"
-        Dir.chdir "testmod" do
-            system "git config --local user.name \"Tester\""
-            system "git config --local user.email \"test@test.test\""
-            FileUtils.mkdir "manifests"
-            File.open("manifests/testmod.pp", 'w') do |fh|
-                fh.print $master_content
+        Dir.chdir "test/data" do
+            system "git init testmod"
+            Dir.chdir "testmod" do
+                system "git config --local user.name \"Tester\""
+                system "git config --local user.email \"test@test.test\""
+                FileUtils.mkdir "manifests"
+                File.open("manifests/testmod.pp", 'w') do |fh|
+                    fh.print $master_content
+                end
+                system "git add manifests"
+                system "git commit -m\"initial commit\""
+                system "git branch staging"
+                system "git checkout staging"
+                File.open("manifests/testmod.pp", 'w') do |fh|
+                    fh.print $staging_content
+                end
+                system "git add manifests/testmod.pp"
+                system "git commit -m\"add staging version\""
+                system "git checkout master"
             end
-            system "git add manifests"
-            system "git commit -m\"initial commit\""
-            system "git branch staging"
-            system "git checkout staging"
-            File.open("manifests/testmod.pp", 'w') do |fh|
-                fh.print $staging_content
-            end
-            system "git add manifests/testmod.pp"
-            system "git commit -m\"add staging version\""
-            system "git checkout master"
         end
 
     end
