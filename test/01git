@@ -68,25 +68,26 @@ RSpec.configure do |config|
         else
             FileUtils.mkdir "test/data"
         end
-        Dir.chdir "test/data"
-        system "git init testmod"
-        Dir.chdir "testmod" do
-            system "git config --local user.name \"Tester\""
-            system "git config --local user.email \"test@test.test\""
-            FileUtils.mkdir "manifests"
-            File.open("manifests/testmod.pp", 'w') do |fh|
-                fh.print $master_content
+        Dir.chdir "test/data" do
+            system "git init testmod"
+            Dir.chdir "testmod" do
+                system "git config --local user.name \"Tester\""
+                system "git config --local user.email \"test@test.test\""
+                FileUtils.mkdir "manifests"
+                File.open("manifests/testmod.pp", 'w') do |fh|
+                    fh.print $master_content
+                end
+                system "git add manifests"
+                system "git commit -m\"initial commit\""
+                system "git branch staging"
+                system "git checkout staging"
+                File.open("manifests/testmod.pp", 'w') do |fh|
+                    fh.print $staging_content
+                end
+                system "git add manifests/testmod.pp"
+                system "git commit -m\"add staging version\""
+                system "git checkout master"
             end
-            system "git add manifests"
-            system "git commit -m\"initial commit\""
-            system "git branch staging"
-            system "git checkout staging"
-            File.open("manifests/testmod.pp", 'w') do |fh|
-                fh.print $staging_content
-            end
-            system "git add manifests/testmod.pp"
-            system "git commit -m\"add staging version\""
-            system "git checkout master"
         end
 
     end
@@ -115,7 +116,7 @@ describe Puppet::Marshall::Git do
     context "when initializing" do
 
         after(:all) do
-            FileUtils.rm_r "wrk/testmod"
+            FileUtils.rm_r "test/data/wrk/testmod"
         end
 
         it "opens an existing git repo when first created" do
@@ -124,8 +125,9 @@ describe Puppet::Marshall::Git do
         end
 
         it "clones an existing repo when using clone" do
-            git = Puppet::Marshall::Git.clone("testmod", "wrk/testmod")
-            git.repo.should eq "wrk/testmod"
+            git = Puppet::Marshall::Git.clone("test/data/testmod",
+                                        "test/data/wrk/testmod")
+            git.repo.should eq "test/data/wrk/testmod"
             file = File.join(git.repo, "manifests", "testmod.pp")
             filecontent(file).should eq $master_content
         end
@@ -135,13 +137,13 @@ describe Puppet::Marshall::Git do
     context "when updating" do
 
         before(:all) do
-            @marsh = Puppet::Marshall::Git.clone("testmod",
-                                                "marshall/testmod")
+            @marsh = Puppet::Marshall::Git.clone("test/data/testmod",
+                                                "test/data/wrk/marshall/testmod")
             @file = File.join(@marsh.repo, "manifests", "testmod.pp")
         end
 
         it "returns the marshalled repo location" do
-            @marsh.repo.should eq "marshall/testmod"
+            @marsh.repo.should eq "test/data/wrk/marshall/testmod"
             filecontent(@file).should eq $master_content
         end
 
@@ -165,7 +167,7 @@ describe Puppet::Marshall::Git do
         end
 
         it "creates local tracking branches for remote branches" do
-            Dir.chdir("testmod") do
+            Dir.chdir("test/data/testmod") do
                 system "git branch user >/dev/null 2>&1"
                 system "git checkout user >/dev/null 2>&1"
                 File.open("manifests/testmod.pp", 'w') do |fh|
