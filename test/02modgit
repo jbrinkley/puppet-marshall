@@ -9,18 +9,46 @@ require 'git_spec_helper'
 describe Puppet::Marshall::Mod do
 
     before(:all) do
-        $cfg = Puppet::Marshall::Settings.new({:repository => "wrk"})
+        $cfg = Puppet::Marshall::Settings.new({:repository => "test/data/wrk"})
     end
 
     context "when initializing" do
         it "returns the style of 'git' when specifying 'git'" do
-            m = Puppet::Marshall::Mod.new($cfg, :style => 'git')
+            m = Puppet::Marshall::Mod.new($cfg, 'testmod', :style => 'git')
             m.style.should eq 'git'
         end
 
         it "returns the style of 'git' when specifying 'git' in opt hash" do
-            m = Puppet::Marshall::Mod.new($cfg, { :style => 'git' })
+            m = Puppet::Marshall::Mod.new($cfg, 'testmod', { :style => 'git' })
             m.style.should eq 'git'
+        end
+
+        it "returns the style of 'git' when specifying git URL" do
+            m = Puppet::Marshall::Mod.new($cfg, 'testmod',
+                                      { :source => 'http://puppet/testmod.git'
+                                          })
+            m.style.should eq 'git'
+        end
+
+        it "returns the style of 'git' as a default" do
+            m = Puppet::Marshall::Mod.new(
+                                      $cfg, 'testmod',
+                                      { :source =>
+                                              'file:///home/subversion/testmod'
+                                          })
+            m.style.should eq 'git'
+        end
+
+        it "returns a name of 'testmod' when specifying 'testmod'" do
+            m = Puppet::Marshall::Mod.new($cfg, 'testmod',
+                                      :source => 'test/data/testmod')
+            m.name.should eq 'testmod'
+        end
+
+        it "returns a name of 'testmod' when specifying '*/testmod'" do
+            m = Puppet::Marshall::Mod.new($cfg, 'org/testmod',
+                                      :source => 'test/data/testmod')
+            m.name.should eq 'testmod'
         end
 
     end
