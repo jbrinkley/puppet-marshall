@@ -73,15 +73,7 @@ describe Puppet::Marshall::Git do
         end
 
         it "creates local tracking branches for remote branches" do
-            Dir.chdir("test/data/testmod") do
-                system "git branch user >/dev/null 2>&1"
-                system "git checkout user >/dev/null 2>&1"
-                File.open("manifests/testmod.pp", 'w') do |fh|
-                    fh.print $user_content
-                end
-                system "git add manifests/testmod.pp >/dev/null 2>&1"
-                system "git commit -m\"update user content\" >/dev/null 2>&1"
-            end
+            makebranch('user', $user_content)
             @marsh.track_missing
             @marsh.local_branches.should =~ ['master', 'staging', 'user']
         end
