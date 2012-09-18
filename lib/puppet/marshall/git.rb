@@ -35,6 +35,18 @@ module Puppet::Marshall
             end
         end
 
+        def self.is_git?(url)
+            case url
+            when /\.git$/
+                true
+            when /^git/
+                true
+            else
+                # Really, 'unknown' or 'not for sure'
+                false
+            end
+        end
+
         def dbg(msg)
             self.class.dbg(msg)
         end

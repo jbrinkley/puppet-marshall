@@ -106,7 +106,7 @@ describe Puppet::Marshall::Git do
                 'file:///home/git/testmod.git',
                 'git+ssh:///home/git/testmod',
                 'ssh:///home/git/testmod.git'
-            ].each do
+            ].each do |url|
                 (Puppet::Marshall::Git.is_git? url).should be_true
             end
         end
