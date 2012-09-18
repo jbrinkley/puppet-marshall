@@ -14,12 +14,14 @@ describe Puppet::Marshall::Mod do
 
     context "when initializing" do
         it "returns the style of 'git' when specifying 'git'" do
-            m = Puppet::Marshall::Mod.new($cfg, 'testmod', :style => 'git')
+            m = Puppet::Marshall::Mod.new($cfg, 'testmod', :style => 'git',
+                                      :source => 'test/data/testmod')
             m.style.should eq 'git'
         end
 
         it "returns the style of 'git' when specifying 'git' in opt hash" do
-            m = Puppet::Marshall::Mod.new($cfg, 'testmod', { :style => 'git' })
+            m = Puppet::Marshall::Mod.new($cfg, 'testmod', { :style => 'git',
+                                          :source => 'test/data/testmod' })
             m.style.should eq 'git'
         end
 
@@ -51,6 +53,15 @@ describe Puppet::Marshall::Mod do
             m.name.should eq 'testmod'
         end
 
+    end
+
+    context "when failing" do
+        it "raises an error when source can't be determined" do
+            lambda do
+                Puppet::Marshall::Mod.new($cfg,
+                                    'org/testmod', { })
+            end.should raise_error(Puppet::Marshall::Error)
+        end
     end
 
     context "when updating" do
