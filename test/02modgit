@@ -57,6 +57,8 @@ class testmod {
 }
 EOF
 
+$source_url = "file://#{Dir.pwd}/test/data/testmod"
+
 def filecontent(file)
     File.open(file, 'r') { |fh| fh.read }
 end
@@ -110,6 +112,16 @@ describe Puppet::Marshall::Mod do
             m = Puppet::Marshall::Mod.new($cfg, :style => 'git')
             m.style.should eq 'git'
         end
+
+        it "returns the style of 'git' when specifying 'git' in opt hash" do
+            m = Puppet::Marshall::Mod.new($cfg, { :style => 'git' })
+            m.style.should eq 'git'
+        end
+
+    end
+
+    context "when updating" do
+
     end
 
 end

@@ -99,6 +99,19 @@ end
 
 describe Puppet::Marshall::Git do
 
+    context "when examining git data" do
+        it "returns true for a git URL" do
+            [
+                'https://public/testmod.git',
+                'file:///home/git/testmod.git',
+                'git+ssh:///home/git/testmod',
+                'ssh:///home/git/testmod.git'
+            ].each do
+                (Puppet::Marshall::Git.is_git? url).should be_true
+            end
+        end
+    end
+
     context "when initializing" do
 
         after(:all) do
