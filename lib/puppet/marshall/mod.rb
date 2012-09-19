@@ -6,18 +6,28 @@ module Puppet::Marshall
 
         attr_accessor :name, :flavor, :style, :source
 
+        def self.get_instance(settings, fullname, opts)
+            if opts[:style].nil?
+                if Puppet::Marshall::Git.is_git? opts[:source]
+                    opts[:style] = 'git'
+                else
+                    opts[:style] = 'git'
+                end
+            end
+            case opts[:style]
+            when 'git'
+                require 'puppet/marshall/mod/git'
+                Puppet::Marshall::Mod::Git.new(settings, fullname, opts)
+            else
+                raise Puppet::Marshall::Error.new(
+                                              "Unsupported style #{opts[:style]}")
+            end
+        end
+
         def initialize(settings, fullname, opts)
             self.fullname = fullname
             @settings = settings
             set_from_opthash(opts)
-            # Calculate source if possible - TODO
-            if @style.nil?
-                if Puppet::Marshall::Git.is_git? @source
-                    @style = 'git'
-                else
-                    @style = 'git'
-                end
-            end
             valid?
         end
 
@@ -50,10 +60,20 @@ module Puppet::Marshall
             @fullname
         end
 
-        def marshall
+        # fetches/updates/syncs info from source but does not update puppet
+        def fetch
+            false
         end
 
+        # returns the list of live environments based on the source
+        def implied_environments
+            []
+        end
+
+        # fetches, then
+        # updates live puppet for the environments specified
         def update(env=:all)
+            []
         end
 
     end

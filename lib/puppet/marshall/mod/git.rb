@@ -1,9 +1,8 @@
 require 'puppet/marshall'
-require 'puppet/marshall/mod/base'
 
-module Puppet::Marshall::Mod
+module Puppet::Marshall
 
-    class Git < Base
+    class Mod::Git < Mod
 
         def marshall
         end
