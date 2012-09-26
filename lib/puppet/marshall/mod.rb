@@ -4,9 +4,12 @@ module Puppet::Marshall
 
     class Mod
 
+        @@debug = false
+
         attr_accessor :name, :flavor, :style, :source
 
         def self.get_instance(settings, fullname, opts)
+            dbg "#{self.to_s}.get_instance(#{settings.inspect}, #{fullname.inspect}, #{opts.inspect})"
             if opts[:style].nil?
                 if Puppet::Marshall::Git.is_git? opts[:source]
                     opts[:style] = 'git'
@@ -24,7 +27,20 @@ module Puppet::Marshall
             end
         end
 
+        def self.set_debug
+            @@debug = true
+        end
+
+        def self.dbg(msg)
+            puts "DBG(#{self.to_s}): #{msg}" if @@debug
+        end
+
+        def dbg(msg)
+            self.class.dbg(msg)
+        end
+
         def initialize(settings, fullname, opts)
+            dbg("#{self.class}.initialize(#{settings.inspect}, #{fullname.inspect}, #{opts.inspect})")
             self.fullname = fullname
             @settings = settings
             set_from_opthash(opts)

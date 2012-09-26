@@ -18,6 +18,19 @@ class testmod {
 }
 EOF
 
+$updated_content = <<'EOF'
+class testmod {
+   file {
+      "testmod-indicator":
+         path => "/var/tmp/testmod.indicator",
+         content => "testmod updated\n",
+         owner => 'root',
+         group => 'root',
+         mode => 0644;
+   }
+}
+EOF
+
 $staging_content = <<'EOF'
 class testmod {
    file {
@@ -85,6 +98,17 @@ def makebranch(branch, content=$user_content)
         end
         system "git add manifests/testmod.pp #{$debugout}"
         system "git commit -m\"update #{branch} content\" #{$debugout}"
+    end
+end
+
+def updatemaster(content=$updated_content)
+    Dir.chdir("test/data/testmod") do
+        system "git checkout master #{$debugout}"
+        File.open("manifests/testmod.pp", 'w') do |fh|
+            fh.print content
+        end
+        system "git add manifests/testmod.pp #{$debugout}"
+        system "git commit -m\"update master content\" #{$debugout}"
     end
 end
 

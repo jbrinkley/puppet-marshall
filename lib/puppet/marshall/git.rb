@@ -17,6 +17,10 @@ module Puppet::Marshall
             @repo = repo
         end
 
+        def self.open(repo, opts={})
+            self.new(repo, opts)
+        end
+
         def self.set_debug
             @@dbg = true
         end

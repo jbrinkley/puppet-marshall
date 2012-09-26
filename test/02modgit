@@ -9,7 +9,9 @@ require 'git_spec_helper'
 describe Puppet::Marshall::Mod do
 
     before(:all) do
-        $cfg = Puppet::Marshall::Settings.new({:repository => "test/data/wrk"})
+        $cfg = Puppet::Marshall::Settings.new.merge(
+                                              {:repository => "test/data/wrk"})
+        Puppet::Marshall::Mod.set_debug if ENV['TEST_DEBUG']
     end
 
     context "when initializing" do
@@ -74,14 +76,28 @@ describe Puppet::Marshall::Mod do
     end
 
     context "when updating" do
+
+        marshalled = "test/data/wrk/modules/marshall/testmod"
+
         it "establishes a fetch clone in modules/marshall" do
             mod = Puppet::Marshall::Mod.get_instance($cfg,
                                         'org/testmod',
                                         :source => 'test/data/testmod')
             mod.fetch
-            File.exist?('test/data/wrk/modules/marshall/testmod/manifests/testmod.pp').should be_true
+            File.exist?("#{marshalled}/manifests/testmod.pp").should be_true
+            filecontent("#{marshalled}/manifests/testmod.pp").should == $master_content
         end
 
+        it "updates a fetched clone in modules/marshall" do
+            mod = Puppet::Marshall::Mod.get_instance($cfg,
+                                            'org/testmod',
+                                            :source => 'test/data/testmod')
+            mod.fetch
+            filecontent("#{marshalled}/manifests/testmod.pp").should == $master_content
+            updatemaster($updated_content)
+            mod.fetch
+            filecontent("#{marshalled}/manifests/testmod.pp").should == $updated_content
+        end
     end
 
 end
