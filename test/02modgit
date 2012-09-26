@@ -77,7 +77,8 @@ describe Puppet::Marshall::Mod do
 
     context "when updating" do
 
-        marshalled = "test/data/wrk/modules/marshall/testmod"
+        modules = "test/data/wrk/modules"
+        marshalled = "#{modules}/marshall/testmod"
 
         it "establishes a fetch clone in modules/marshall" do
             mod = Puppet::Marshall::Mod.get_instance($cfg,
@@ -97,6 +98,14 @@ describe Puppet::Marshall::Mod do
             updatemaster($updated_content)
             mod.fetch
             filecontent("#{marshalled}/manifests/testmod.pp").should == $updated_content
+        end
+
+        it "updates in the puppet module_path" do
+            mod = Puppet::Marshall::Mod.get_instance($cfg,
+                                            'org/testmod',
+                                            :source => 'test/data/testmod')
+            mod.update
+            File.exist?("#{marshalled}/modules/production/testmod/manifests/testmod.pp").should be_true
         end
     end
 
