@@ -47,6 +47,8 @@ module Puppet::Marshall
             end
         end
 
+        # Not part of the interface - all interface methods in this class
+        # specify environments, not branches
         def open_or_clone(source, loc, branch=nil)
             dbg "open_or_clone(#{source.inspect}, #{loc.inspect}, #{branch.inspect})"
             if File.exist? loc and ! @settings['force-clean']
