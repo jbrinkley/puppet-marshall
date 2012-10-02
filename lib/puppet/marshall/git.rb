@@ -25,14 +25,6 @@ module Puppet::Marshall
             @@dbg = true
         end
 
-        def self.log(msg)
-            if @@dbg
-                File.open('puppet-marshall-git-debug.log', 'a') do |fh|
-                    fh.puts msg
-                end
-            end
-        end
-
         def self.dbg(msg)
             if @@dbg
                 puts "DBG(Puppet::Marshall::Git): #{msg}"
@@ -62,13 +54,9 @@ module Puppet::Marshall
             IO.popen('-') do |io|
                 if io.nil?
                     # Child
-                    log "Child is #{Process.pid}"
                     Dir.chdir repodir unless repodir.nil?
-                    log "   redirecting $stderr"
                     $stderr.reopen($stdout)
-                    log "   exec(#{cmd.join(', ')})"
                     exec *cmd
-                    log "   exec failed"
                 end
                 dbg "Parent is #{Process.pid}"
                 out = io.readlines

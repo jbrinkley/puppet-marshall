@@ -4,6 +4,7 @@
 $debugout = ENV['TEST_DEBUG'] ? '' : '>/dev/null 2>&1'
 
 require 'puppet/marshall/git'
+Puppet::Marshall::Git.set_debug if ENV['TEST_DEBUG']
 
 $master_content = <<'EOF'
 class testmod {
@@ -148,7 +149,9 @@ RSpec.configure do |config|
     config.after(:all) do
         # It would be nice to examine exceptions and leave this here for
         # errors
-        FileUtils.rm_r "test/data" if File.exist? "test/data"
+        unless ENV['TEST_DEBUG']
+            FileUtils.rm_r "test/data" if File.exist? "test/data"
+        end
     end
 
 end

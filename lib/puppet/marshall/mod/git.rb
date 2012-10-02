@@ -52,6 +52,7 @@ module Puppet::Marshall
         def open_or_clone(source, loc, branch=nil)
             dbg "open_or_clone(#{source.inspect}, #{loc.inspect}, #{branch.inspect})"
             if File.exist? loc and ! @settings['force-clean']
+                dbg "open_or_clone: opening existing #{loc}"
                 fetched = Puppet::Marshall::Git.open(loc)
                 # Hm, this doesn't seem right. Don't I need to create the
                 # local tracking branch before checking it out? that is,
@@ -59,6 +60,7 @@ module Puppet::Marshall
                 fetched.pull branch
             else
                 # Create leading directories?
+                dbg "open_or_clone: cloning into new #{loc}"
                 fetched = Puppet::Marshall::Git.clone(source, loc, branch)
             end
             fetched
