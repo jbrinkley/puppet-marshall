@@ -12,6 +12,10 @@ describe Puppet::Marshall::Mod do
         $cfg = Puppet::Marshall::Settings.new.merge(
                                               {:repository => "test/data/wrk"})
         Puppet::Marshall::Mod.set_debug if ENV['TEST_DEBUG']
+        $modules = "#{$cfg[:repository]}/modules"
+        $prodmanifests = "#{$modules}/production/testmod/manifests"
+        $stagmanifests = "#{$modules}/staging/testmod/manifests"
+        $usermanifests = "#{$modules}/user/testmod/manifests"
     end
 
     context "when initializing" do
@@ -79,20 +83,21 @@ describe Puppet::Marshall::Mod do
 
         modules = "test/data/wrk/modules"
         marshalled = "#{modules}/marshall/testmod"
+        mod = nil
+
+        before(:each) do
+            mod = Puppet::Marshall::Mod.get_instance($cfg,
+                                            'org/testmod',
+                                            :source => 'test/data/testmod')
+        end
 
         it "establishes a fetch clone in modules/marshall" do
-            mod = Puppet::Marshall::Mod.get_instance($cfg,
-                                        'org/testmod',
-                                        :source => 'test/data/testmod')
             mod.fetch
             File.exist?("#{marshalled}/manifests/testmod.pp").should be_true
             filecontent("#{marshalled}/manifests/testmod.pp").should == $master_content
         end
 
         it "updates a fetched clone in modules/marshall" do
-            mod = Puppet::Marshall::Mod.get_instance($cfg,
-                                            'org/testmod',
-                                            :source => 'test/data/testmod')
             mod.fetch
             filecontent("#{marshalled}/manifests/testmod.pp").should == $master_content
             updatemaster($updated_content)
@@ -100,13 +105,35 @@ describe Puppet::Marshall::Mod do
             filecontent("#{marshalled}/manifests/testmod.pp").should == $updated_content
         end
 
+        it "returns the list of implied environments" do
+            mod.fetch
+            mod.implied_environments.should =~ ['production', 'staging']
+        end
+
         it "updates in the puppet module_path" do
+            mod.update
+            File.exist?("#{$prodmanifests}/testmod.pp").should be_true
+            filecontent("#{$prodmanifests}/testmod.pp").should == $updated_content
+        end
+
+        it "doesn't update for no changes" do
+            File.exist?("#{$prodmanifests}/testmod.pp").should be_true
+            content = filecontent("#{$prodmanifests}/testmod.pp")
             mod = Puppet::Marshall::Mod.get_instance($cfg,
                                             'org/testmod',
                                             :source => 'test/data/testmod')
             mod.update
-            File.exist?("#{marshalled}/modules/production/testmod/manifests/testmod.pp").should be_true
+            File.exist?("#{$prodmanifests}/testmod.pp").should be_true
+            filecontent("#{$prodmanifests}/testmod.pp").should == content
         end
+
+        it "updates for every environment by default" do
+            mod.update
+            File.exist?("#{$prodmanifests}/testmod.pp").should be_true
+            filecontent("#{$prodmanifests}/testmod.pp").should == $updated_content
+            filecontent("#{$stagmanifests}/testmod.pp").should == $staging_content
+        end
+
     end
 
 end

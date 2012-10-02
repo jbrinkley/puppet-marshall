@@ -90,6 +90,9 @@ module Puppet::Marshall
         # @return [Puppet::Marshall::Git] the new repository
         def self.clone(source, destdir, branch=nil)
             # git clone --branch #{branch}
+            # That does not seem to work as you would want
+            # that is it doesn't check it out
+            # should that happen here?
             cmd = ['clone']
             unless branch.nil?
                 cmd << '--branch'
@@ -99,7 +102,10 @@ module Puppet::Marshall
             cmd << destdir
             self.command(nil, *cmd)
             git = self.new destdir
-            git.pull if branch.nil?
+            git.pull
+            unless branch.nil?
+                git.checkout branch
+            end
             git
         end
 
@@ -119,8 +125,20 @@ module Puppet::Marshall
         # Note: does not set up tracking branches (see track_missing)
         def pull(branch=nil)
             # git pull --all
+            command('pull', '--all')
+            track_missing
+            unless branch.nil?
+                checkout branch
+            end
+            true
+        end
+
+        def checkout(branch)
             if branch.nil?
-                command('pull', '--all')
+                $stderr.puts("warning checkout nil called")
+            else
+                dbg "checkout #{branch.inspect}"
+                command('checkout', branch)
             end
         end
 
@@ -141,11 +159,9 @@ module Puppet::Marshall
         # and pulls if necessary. Can result in two pulls--one at
         # the beginning, then another if a new branch was set up
         def track_missing
-            pull
             lbranches = local_branches
             dbg "track_missing: local branches = #{lbranches.join(', ')}"
             remote = remote_name
-            to_pull = false
             added = []
             remote_branches.reject { |b| /HEAD/.match(b) }.each do |branch|
                 dbg "   considering remote branch #{branch}"
@@ -155,10 +171,8 @@ module Puppet::Marshall
                     dbg "   not already tracking #{lbranch}"
                     added << lbranch
                     track lbranch
-                    to_pull = true
                 end
             end
-            pull if to_pull
             added
         end
 
