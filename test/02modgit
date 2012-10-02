@@ -134,6 +134,12 @@ describe Puppet::Marshall::Mod do
             filecontent("#{$stagmanifests}/testmod.pp").should == $staging_content
         end
 
+        it "removes modules from an environment when they go away" do
+            removebranch("staging")
+            mod.update
+            File.exist?("#{$stagmanifests}/testmod.pp").should be_false
+        end
+
     end
 
 end
